@@ -1,0 +1,30 @@
+{
+  "title": "بأسمائه الجزء الأول",
+  "chapters": [
+    {
+      "id": "chapter-1",
+      "title": "المقدمة",
+      "file": "chapter-1.html"
+    },
+    {
+      "id": "chapter-2",
+      "title": "منهجية\r\nالعمل في هذا\r\nالكتاب",
+      "file": "chapter-2.html"
+    },
+    {
+      "id": "chapter-3",
+      "title": "لماذا نعرف\r\nالله\r\nبأسمائه؟",
+      "file": "chapter-3.html"
+    },
+    {
+      "id": "chapter-4",
+      "title": "لماذا\r\nهذا الكتاب؟",
+      "file": "chapter-4.html"
+    },
+    {
+      "id": "chapter-5",
+      "title": "تنبيه وإخلاء حق",
+      "file": "chapter-5.html"
+    }
+  ]
+}

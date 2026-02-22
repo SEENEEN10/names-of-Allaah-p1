@@ -1,0 +1,251 @@
+/* ═══════════════════════════════════════════════════════════════
+   بأسمائه نحيا — Reader Content Styles
+   Styles for the rendered chapter HTML content
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Base Content Typography ── */
+#content {
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+    line-height: var(--line-height);
+    color: var(--text-primary);
+    direction: rtl;
+    text-align: right;
+}
+
+/* Clean up Word-exported markup - hide MSO/Word artifacts */
+#content o\:p {
+    display: none;
+}
+
+#content .MsoNormal,
+#content p {
+    margin: 0 0 1.1em;
+    font-size: var(--font-size) !important;
+    line-height: var(--line-height) !important;
+    font-family: var(--font-family) !important;
+    color: var(--text-primary) !important;
+    background: none !important;
+    text-indent: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Strip all inline styles from word export */
+#content [style] {
+    all: revert;
+    font-family: var(--font-family) !important;
+    font-size: var(--font-size) !important;
+    line-height: var(--line-height) !important;
+    color: inherit !important;
+    background: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-indent: 0 !important;
+    display: inline !important;
+}
+
+#content [style]:is(p, h1, h2, h3, h4, div, section, li) {
+    display: block !important;
+    margin: 0 0 1em !important;
+}
+
+/* ── Headings ── */
+#content h1,
+#content h2,
+#content h3,
+#content h4 {
+    font-family: "Amiri", serif !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    color: var(--accent) !important;
+    background: none !important;
+    text-align: center;
+    margin: 2.2em 0 1em !important;
+    padding: 0 !important;
+    text-indent: 0 !important;
+}
+
+#content h1 {
+    font-size: calc(var(--font-size) * 1.6) !important;
+}
+
+#content h2 {
+    font-size: calc(var(--font-size) * 1.35) !important;
+}
+
+#content h3 {
+    font-size: calc(var(--font-size) * 1.15) !important;
+}
+
+#content h4 {
+    font-size: calc(var(--font-size) * 1.05) !important;
+}
+
+/* First h1 — chapter title */
+#content h1:first-child {
+    font-size: calc(var(--font-size) * 1.8) !important;
+    margin-top: 0 !important;
+    color: var(--accent) !important;
+    padding-bottom: 20px !important;
+    border-bottom: 1px solid var(--border) !important;
+    margin-bottom: 1.8em !important;
+}
+
+/* ── Quran Verse Styling ── */
+#content .quran-verse,
+#content b span[style*="#C00000"],
+#content b span[style*="C00000"] {
+    display: block !important;
+    font-family: "Amiri", serif !important;
+    font-size: calc(var(--font-size) * 1.15) !important;
+    color: var(--accent) !important;
+    text-align: center !important;
+    background: linear-gradient(135deg, var(--accent-soft), var(--gold-soft)) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-right: 3px solid var(--accent) !important;
+    padding: 16px 20px !important;
+    border-radius: var(--radius-md) !important;
+    margin: 1.5em 0 !important;
+    line-height: 1.9 !important;
+    direction: rtl !important;
+}
+
+/* "Red text" spans (Quran verses in the Word doc) */
+#content *[style*="color:#C00000"],
+#content *[style*="color: #C00000"],
+#content *[style*="color:red"],
+#content *[style*="color: red"] {
+    color: var(--accent) !important;
+    font-weight: inherit;
+}
+
+/* ── Bold/Strong refinement ── */
+#content b,
+#content strong {
+    font-weight: 700;
+    color: inherit;
+}
+
+/* ── Block quotes / Scholar quotes ── */
+#content .scholar-quote {
+    border-right: 3px solid var(--gold);
+    padding-right: 18px;
+    margin: 1.5em 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* ── Lists ── */
+#content ul,
+#content ol {
+    padding-right: 24px;
+    margin: 1em 0;
+}
+
+#content li {
+    margin-bottom: 0.6em;
+    font-size: var(--font-size);
+    color: var(--text-primary);
+    line-height: var(--line-height);
+}
+
+/* ── Tables ── */
+#content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+    font-size: calc(var(--font-size) * 0.88);
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+}
+
+#content table thead tr,
+#content table tr:first-child {
+    background: linear-gradient(135deg, var(--accent-soft), var(--gold-soft));
+}
+
+#content table th,
+#content table td {
+    padding: 12px 16px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+#content table th {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+#content table tr:last-child td {
+    border-bottom: none;
+}
+
+#content table tr:nth-child(even) {
+    background: color-mix(in srgb, var(--bg-page) 60%, var(--bg-surface));
+}
+
+/* ── Ornamental section separators ── */
+#content .section-break {
+    text-align: center;
+    color: var(--gold);
+    margin: 2em 0;
+    opacity: 0.7;
+    font-size: 1.2rem;
+    letter-spacing: 0.3em;
+}
+
+/* ── Special block: highlighted callout ── */
+#content .callout {
+    background: var(--gold-soft);
+    border: 1px solid var(--border-strong);
+    border-right: 3px solid var(--gold);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    margin: 1.5em 0;
+    font-family: "Amiri", serif;
+    font-size: calc(var(--font-size) * 1.05);
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* ── Page number artifacts (from Word) — hide ── */
+#content .MsoPageNumber,
+#content .page-number {
+    display: none;
+}
+
+/* ── Remove empty paragraphs ── */
+#content p:empty {
+    display: none;
+}
+
+/* ── Dua (Prayer) blocks — special styling ── */
+.dua-block {
+    background: linear-gradient(135deg, var(--accent-soft), var(--gold-soft));
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 22px 24px;
+    margin: 1.8em 0;
+    text-align: center;
+    position: relative;
+}
+
+.dua-block::before {
+    content: '🤲';
+    font-size: 1.6rem;
+    display: block;
+    margin-bottom: 12px;
+    opacity: 0.6;
+}
+
+/* ── Section header decorative arrows (◄) ── */
+#content p:has(> span[style*="color:#C00000"]):first-of-type,
+#content .section-heading {
+    color: var(--accent) !important;
+    font-weight: 700 !important;
+}

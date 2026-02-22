@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="بأسمائه نحيا: فقه الحب والتقوى في أسماء الله الحسنى — دريد إبراهيم الموصلي" />
+  <title>بأسمائه نحيا</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="stylesheet" href="assets/reader.css" />
+</head>
+
+<body>
+
+  <!-- Reading Progress Bar -->
+  <div id="progress-bar" role="progressbar" aria-label="تقدم القراءة">
+    <div id="progress-fill"></div>
+  </div>
+
+  <!-- ══ Header ══ -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-title">بأسمائه نحيا</span>
+      <span class="brand-sub">فقه الحب والتقوى في أسماء الله الحسنى</span>
+    </div>
+    <div class="controls">
+      <button id="continueBtn" class="btn primary" style="display:none" aria-label="استمرار القراءة">
+        ↩ استمرار
+      </button>
+      <button id="toggleNav" class="btn icon-btn" aria-label="الفهارس" aria-expanded="false">
+        ☰ <span>الفهارس</span>
+      </button>
+      <button id="openSettings" class="btn icon-btn" aria-label="إعدادات العرض">
+        ⚙ <span>الإعدادات</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══ App Layout ══ -->
+  <div class="app-layout">
+
+    <!-- Sidebar -->
+    <nav id="sidebar" class="sidebar collapsed" aria-label="فهرس الفصول">
+      <div class="sidebar-inner">
+        <!-- Back to cover -->
+        <div class="sidebar-section">
+          <button id="backToCover" class="btn" style="width:100%;justify-content:center;margin-bottom:16px"
+            onclick="document.getElementById('cover-page').style.display='block'; document.getElementById('content').classList.remove('visible'); history.replaceState(null,'',location.pathname); document.title='بأسمائه نحيا — قارئ الكتاب';">
+            ⌂ <span>صفحة الغلاف</span>
+          </button>
+        </div>
+        <div class="sidebar-section">
+          <p class="sidebar-label">الجزء الأول — الأسماء الحسنى</p>
+          <ul id="chaptersList" class="chapters"></ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="reader-main">
+
+      <!-- Cover Page -->
+      <div id="cover-page" class="content-wrap">
+        <div class="cover-card">
+          <span class="cover-ornament">❧</span>
+          <p class="cover-bismillah">بسم الله الرحمن الرحيم</p>
+          <h1 class="cover-title">بأسمائه <span>نحيا</span></h1>
+          <p class="cover-subtitle">
+            فقه الحب والتقوى في أسماء الله الحسنى<br />
+            الجزء الأوّل — أسماء الجمال والرَّحمة والغفران
+          </p>
+          <div class="cover-divider"></div>
+          <p class="cover-author">
+            تأليف: <strong>دريد إبراهيم الموصلي</strong> (أبو مريم)
+          </p>
+          <div class="cover-actions">
+            <button id="startReadingBtn" class="btn primary">
+              &#9654; استمرار القراءة
+            </button>
+            <button id="fromBeginBtn" class="btn">
+              ↻ البداية
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chapter Content -->
+      <article id="content" class="content-wrap" dir="rtl" aria-live="polite"></article>
+
+    </main>
+  </div>
+
+  <!-- ══ Settings Panel ══ -->
+  <aside id="settings-panel" class="settings-panel" aria-label="إعدادات العرض" aria-hidden="true">
+    <div class="settings-inner">
+      <div class="settings-title">
+        إعدادات العرض
+        <button id="closeSettings" class="settings-close" aria-label="إغلاق الإعدادات">✕</button>
+      </div>
+
+      <!-- Theme -->
+      <div class="setting-group">
+        <label class="setting-label">المظهر</label>
+        <div class="theme-swatches">
+          <div class="swatch active" data-theme="light" title="فاتح">فاتح</div>
+          <div class="swatch" data-theme="dark" title="داكن">داكن</div>
+          <div class="swatch" data-theme="sepia" title="نُسخية">نُسخي</div>
+          <div class="swatch" data-theme="sand" title="رملي">رملي</div>
+        </div>
+      </div>
+
+      <hr class="settings-divider" />
+
+      <!-- Font Family -->
+      <div class="setting-group">
+        <label class="setting-label" for="fontFamily">الخط</label>
+        <select id="fontFamily">
+          <option value="Amiri, serif">Amiri (مقروء للقرآن)</option>
+          <option value="'Noto Naskh Arabic', serif">Noto Naskh Arabic</option>
+          <option value="Cairo, sans-serif">Cairo</option>
+          <option value="Tajawal, sans-serif">Tajawal</option>
+        </select>
+      </div>
+
+      <!-- Font Size -->
+      <div class="setting-group">
+        <label class="setting-label">حجم الخط</label>
+        <div class="font-stepper">
+          <button id="fontDec" aria-label="تصغير الخط">−</button>
+          <span id="fontSizeLabel">18px</span>
+          <button id="fontInc" aria-label="تكبير الخط">+</button>
+        </div>
+      </div>
+
+      <!-- Line Height -->
+      <div class="setting-group">
+        <label class="setting-label" for="lineHeight">تباعد الأسطر</label>
+        <input type="range" id="lineHeight" min="1.4" max="2.6" step="0.1" value="2.0" />
+      </div>
+
+      <hr class="settings-divider" />
+
+      <!-- Color customization (for sand theme) -->
+      <div class="setting-group">
+        <label class="setting-label" for="bgColor">لون الخلفية (المظهر الرملي)</label>
+        <input type="color" id="bgColor" value="#fdf6e3" />
+      </div>
+      <div class="setting-group">
+        <label class="setting-label" for="fontColor">لون النص</label>
+        <input type="color" id="fontColor" value="#1c1007" />
+      </div>
+
+      <hr class="settings-divider" />
+
+      <div class="setting-group">
+        <button id="resetSettings" class="btn" style="width:100%;justify-content:center">
+          ↺ إعادة الضبط الافتراضي
+        </button>
+      </div>
+
+      <hr class="settings-divider" />
+
+      <!-- Keyboard shortcuts hint -->
+      <div style="font-family: Cairo, sans-serif; font-size: 0.75rem; color: var(--text-muted); line-height: 1.8;">
+        <strong style="color: var(--text-secondary); display:block; margin-bottom:6px;">اختصارات لوحة المفاتيح</strong>
+        <span>← → للتنقل بين الفصول</span><br />
+        <span>Esc لإغلاق القوائم</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Overlay -->
+  <div id="overlay" aria-hidden="true"></div>
+
+  <!-- ══ Continue Reading Toast ══ -->
+  <div id="continue-toast" role="alert" aria-live="polite">
+    <span class="toast-icon">📖</span>
+    <div class="toast-body">
+      <div class="toast-title">استأنف من حيث توقفت</div>
+      <div id="toast-chapter" class="toast-chapter">…</div>
+    </div>
+    <div class="toast-actions">
+      <button id="toast-go" class="btn primary">استمرار</button>
+    </div>
+    <button id="toast-dismiss" class="toast-dismiss" aria-label="إغلاق">✕</button>
+  </div>
+
+  <!-- Script -->
+  <script src="assets/app.js"></script>
+</body>
+
+</html>
