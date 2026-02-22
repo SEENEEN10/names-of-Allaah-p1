@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بأسمائه نحيا - قارئ الكتاب</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital@0;1&family=Cairo:wght@400;600;700&family=Tajawal:wght@400;600;700&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #f8f4ef;
+      --text-primary: #1c1007;
+      --text-secondary: #6b5d4f;
+      --accent: #d4a574;
+      --border-color: #e8dfd6;
+      --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      --font-size: 18px;
+      --line-height: 2.0;
+      --font-family: 'Amiri', serif;
+      --transition: 0.3s ease;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-family);
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, var(--accent), #c9945d);
+      color: white;
+      padding: 1.5rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      transition: transform 0.3s ease-out;
+    }
+
+    header.hide {
+      transform: translateY(-100%);
+    }
+
+    .header-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      background: rgba(255,255,255,0.2);
+      border: 2px solid white;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-family: var(--font-family);
+      transition: var(--transition);
+    }
+
+    button:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Progress Bar */
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #d4a574, #c9945d);
+      width: 0%;
+      transition: width 0.1s linear;
+      z-index: 200;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    /* Content Area */
+    #content {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      min-height: 60vh;
+      text-align: justify;
+    }
+
+    #content h1 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    #content h2 {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      color: #8b7355;
+    }
+
+    #content p {
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      right: -300px;
+      top: 0;
+      width: 300px;
+      height: 100vh;
+      background: white;
+      overflow-y: auto;
+      z-index: 90;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.2);
+      transition: right var(--transition);
+      padding-top: 80px;
+    }
+
+    .sidebar.active {
+      right: 0;
+    }
+
+    .sidebar h3 {
+      padding: 1rem 1.5rem;
+      color: var(--accent);
+      border-bottom: 2px solid var(--border-color);
+      font-size: 1.1rem;
+    }
+
+    .sidebar ul {
+      list-style: none;
+    }
+
+    .sidebar li {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 1rem 1.5rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: var(--bg-primary);
+      color: var(--accent);
+      padding-right: 2rem;
+    }
+
+    /* Settings Panel */
+    .settings-panel {
+      position: fixed;
+      left: -350px;
+      top: 0;
+      width: 350px;
+      height: 100vh;
+      background: white;
+      overflow-y: auto;
+      z-index: 90;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+      transition: left var(--transition);
+      padding: 80px 1.5rem 2rem;
+    }
+
+    .settings-panel.active {
+      left: 0;
+    }
+
+    .setting-group {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .setting-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      color: var(--accent);
+    }
+
+    .theme-swatches {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.8rem;
+    }
+
+    .swatch {
+      width: 100%;
+      padding: 0.8rem;
+      border: 3px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.9rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .swatch.light { background: #f8f4ef; color: #1c1007; }
+    .swatch.dark { background: #222; color: #f8f4ef; }
+    .swatch.sepia { background: #faf5ed; color: #5a4a42; }
+    .swatch.sand { background: #e8daa5; color: #4a4a4a; }
+
+    .swatch.active {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .font-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .font-controls button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .controls-row input[type="range"] {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .controls-row label {
+      min-width: 100px;
+    }
+
+    select {
+      width: 100%;
+      padding: 0.6rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-family: var(--font-family);
+      font-size: 0.95rem;
+      cursor: pointer;
+      background: white;
+      color: var(--text-primary);
+    }
+
+    .color-picker-group {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .color-picker-group label {
+      font-size: 0.9rem;
+    }
+
+    input[type="color"] {
+      width: 50px;
+      height: 40px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .reset-btn {
+      width: 100%;
+      background: #e74c3c;
+      border-color: #e74c3c;
+      padding: 0.8rem;
+    }
+
+    .reset-btn:hover {
+      background: #c0392b;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      z-index: 200;
+      transition: bottom var(--transition);
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .toast.show {
+      bottom: 2rem;
+    }
+
+    /* Autosave Indicator */
+    .autosave-indicator {
+      position: fixed;
+      bottom: 2rem;
+      left: 2rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .autosave-indicator.active {
+      opacity: 1;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .container {
+        padding: 2rem 1rem;
+      }
+
+      #content {
+        padding: 1.5rem 1rem;
+      }
+
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .header-title {
+        width: 100%;
+      }
+
+      .header-controls {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .sidebar,
+      .settings-panel {
+        width: 280px;
+      }
+    }
+
+    /* Theme Variations */
+    body.dark {
+      --bg-primary: #1a1a1a;
+      --text-primary: #e0e0e0;
+      --text-secondary: #b0b0b0;
+      --border-color: #333;
+    }
+
+    body.dark #content,
+    body.dark .sidebar,
+    body.dark .settings-panel,
+    body.dark select {
+      background: #2a2a2a;
+    }
+
+    body.sepia {
+      --bg-primary: #faf5ed;
+      --text-primary: #5a4a42;
+      --accent: #8b6f47;
+    }
+
+    body.sand {
+      --bg-primary: #e8daa5;
+      --text-primary: #4a4a4a;
+      --accent: #a0826d;
+    }
+  </style>
+</head>
+<body>
+  <div id="progress-bar"></div>
+
+  <header>
+    <div class="header-title">بأسمائه نحيا</div>
+    <div class="header-controls">
+      <button id="chapters-btn" title="الفصول">📖 الفصول</button>
+      <button id="settings-btn" title="الإعدادات">⚙️ الإعدادات</button>
+      <button id="continue-btn" title="استمرار القراءة">▶️ استمرار</button>
+    </div>
+  </header>
+
+  <div id="progress-bar"></div>
+
+  <sidebar class="sidebar" id="sidebar">
+    <h3>📖 الفصول</h3>
+    <ul id="chapters-list"></ul>
+  </sidebar>
+
+  <div class="settings-panel" id="settings">
+    <h3>⚙️ الإعدادات</h3>
+
+    <div class="setting-group">
+      <label>المظهر</label>
+      <div class="theme-swatches">
+        <div class="swatch light active" data-theme="light">فاتح</div>
+        <div class="swatch dark" data-theme="dark">غامق</div>
+        <div class="swatch sepia" data-theme="sepia">سيبيا</div>
+        <div class="swatch sand" data-theme="sand">رملي</div>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <label>الخط</label>
+      <select id="font-select">
+        <option value="Amiri, serif">Amiri (أميري)</option>
+        <option value="Cairo, sans-serif">Cairo (قاهرة)</option>
+        <option value="Tajawal, sans-serif">Tajawal (تجوال)</option>
+        <option value="Noto Naskh Arabic, serif">Noto Naskh (نسخ)</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label>حجم الخط</label>
+      <div class="font-controls">
+        <button id="font-decrease">−</button>
+        <span id="font-size-display">18px</span>
+        <button id="font-increase">+</button>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <label>ارتفاع السطر</label>
+      <div class="controls-row">
+        <input type="range" id="line-height-slider" min="1.5" max="3" step="0.1" value="2.0">
+        <span id="line-height-display">2.0</span>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <label>الألوان</label>
+      <div class="color-picker-group">
+        <div>
+          <label style="font-size: 0.8rem;">النص</label>
+          <input type="color" id="text-color" value="#1c1007">
+        </div>
+        <div>
+          <label style="font-size: 0.8rem;">الخلفية</label>
+          <input type="color" id="bg-color" value="#f8f4ef">
+        </div>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="reset-btn">إعادة تعيين الإعدادات</button>
+  </div>
+
+  <div class="container">
+    <div id="content">
+      <h1>جاري تحميل الكتاب...</h1>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="autosave-indicator" id="autosave-indicator">✓ تم الحفظ</div>
+
+  <script>
+    const App = (() => {
+      let currentChapter = 'chapter-1';
+      let scrollTimeout;
+      let hasChangedScroll = false;
+      const chapters = [
+        { id: 'chapter-1', title: 'المقدمة' },
+        { id: 'chapter-2', title: 'منهجية العمل' },
+        { id: 'chapter-3', title: 'لماذا نعرف الله بأسمائه' },
+        { id: 'chapter-4', title: 'لماذا هذا الكتاب' },
+        { id: 'chapter-5', title: 'تنبيه وإخلاء حق' }
+      ];
+
+      const defaults = {
+        theme: 'light',
+        font: 'Amiri, serif',
+        fontSize: 18,
+        lineHeight: 2.0,
+        textColor: '#1c1007',
+        bgColor: '#f8f4ef'
+      };
+
+      // Storage
+      const storage = {
+        set: (key, data) => {
+          try {
+            localStorage.setItem(`almasa_${key}`, JSON.stringify(data));
+          } catch (e) {
+            console.warn('Storage error:', e);
+          }
+        },
+        get: (key) => {
+          try {
+            const item = localStorage.getItem(`almasa_${key}`);
+            return item ? JSON.parse(item) : null;
+          } catch (e) {
+            console.warn('Storage error:', e);
+            return null;
+          }
+        }
+      };
+
+      // Load Settings
+      const loadSettings = () => {
+        const saved = storage.get('settings') || {};
+        const settings = { ...defaults, ...saved };
+        applySettings(settings);
+        return settings;
+      };
+
+      // Apply Settings
+      const applySettings = (settings) => {
+        const root = document.documentElement;
+        root.style.setProperty('--font-family', settings.font);
+        root.style.setProperty('--font-size', settings.fontSize + 'px');
+        root.style.setProperty('--line-height', settings.lineHeight);
+        root.style.setProperty('--text-primary', settings.textColor);
+        root.style.setProperty('--bg-primary', settings.bgColor);
+
+        document.body.className = settings.theme;
+        document.getElementById('font-select').value = settings.font;
+        document.getElementById('font-size-display').textContent = settings.fontSize + 'px';
+        document.getElementById('line-height-display').textContent = settings.lineHeight.toFixed(1);
+        document.getElementById('line-height-slider').value = settings.lineHeight;
+        document.getElementById('text-color').value = settings.textColor;
+        document.getElementById('bg-color').value = settings.bgColor;
+
+        document.querySelectorAll('.swatch').forEach(s => {
+          s.classList.toggle('active', s.dataset.theme === settings.theme);
+        });
+      };
+
+      // Save Settings
+      const saveSettings = () => {
+        const settings = {
+          theme: document.body.className || 'light',
+          font: document.getElementById('font-select').value,
+          fontSize: parseInt(document.getElementById('font-size-display').textContent),
+          lineHeight: parseFloat(document.getElementById('line-height-display').textContent),
+          textColor: document.getElementById('text-color').value,
+          bgColor: document.getElementById('bg-color').value
+        };
+        storage.set('settings', settings);
+        applySettings(settings);
+      };
+
+      // Load Chapter
+      const loadChapter = async (chapterId) => {
+        currentChapter = chapterId;
+        const contentDiv = document.getElementById('content');
+        contentDiv.innerHTML = '<p>جاري التحميل...</p>';
+
+        try {
+          const response = await fetch(`content/${chapterId}.html`);
+          if (!response.ok) throw new Error('Failed to load');
+          const html = await response.text();
+          contentDiv.innerHTML = html;
+          
+          // Restore scroll position
+          const savedPos = storage.get(`pos_${chapterId}`) || 0;
+          setTimeout(() => {
+            window.scrollTo(0, savedPos);
+            hasChangedScroll = false;
+          }, 100);
+
+          // Update active chapter
+          document.querySelectorAll('#chapters-list a').forEach(a => {
+            a.classList.toggle('active', a.dataset.chapter === chapterId);
+          });
+
+          // Close sidebar
+          document.getElementById('sidebar').classList.remove('active');
+
+          storage.set('lastChapter', chapterId);
+        } catch (e) {
+          contentDiv.innerHTML = '<p>عذرًا، حدث خطأ في التحميل.</p>';
+        }
+      };
+
+      // Render Chapters List
+      const renderChapters = () => {
+        const list = document.getElementById('chapters-list');
+        list.innerHTML = chapters.map((ch, idx) => `
+          <li><a href="#" data-chapter="${ch.id}" class="chapter-link">${idx + 1}. ${ch.title}</a></li>
+        `).join('');
+
+        list.addEventListener('click', (e) => {
+          if (e.target.classList.contains('chapter-link')) {
+            e.preventDefault();
+            loadChapter(e.target.dataset.chapter);
+          }
+        });
+      };
+
+      // Autosave: Save position when user stops scrolling
+      const setupAutosave = () => {
+        window.addEventListener('scroll', () => {
+          hasChangedScroll = true;
+          clearTimeout(scrollTimeout);
+
+          // After 2 seconds of no scroll, save position
+          scrollTimeout = setTimeout(() => {
+            const position = window.scrollY;
+            storage.set(`pos_${currentChapter}`, position);
+            
+            // Show autosave indicator
+            const indicator = document.getElementById('autosave-indicator');
+            indicator.classList.add('active');
+            setTimeout(() => indicator.classList.remove('active'), 1500);
+          }, 2000);
+        });
+      };
+
+      // Update Progress Bar
+      const updateProgress = () => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrolled = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        document.getElementById('progress-bar').style.width = scrolled + '%';
+      };
+
+      // Show Toast
+      const showToast = (msg) => {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+      };
+
+      // Continue Reading
+      const continueReading = () => {
+        const lastChapter = storage.get('lastChapter') || 'chapter-1';
+        const position = storage.get(`pos_${lastChapter}`) || 0;
+        loadChapter(lastChapter);
+        setTimeout(() => window.scrollTo(0, position), 200);
+        showToast('استئناف القراءة من آخر مكان');
+      };
+
+      // Initialize
+      const init = () => {
+        renderChapters();
+        loadSettings();
+        setupAutosave();
+
+        // Event Listeners
+        document.getElementById('chapters-btn').addEventListener('click', () => {
+          document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        document.getElementById('settings-btn').addEventListener('click', () => {
+          document.getElementById('settings').classList.toggle('active');
+        });
+
+        document.getElementById('continue-btn').addEventListener('click', continueReading);
+
+        // Theme Swatches
+        document.querySelectorAll('.swatch').forEach(swatch => {
+          swatch.addEventListener('click', () => {
+            document.body.className = swatch.dataset.theme;
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+            swatch.classList.add('active');
+            saveSettings();
+          });
+        });
+
+        // Font Select
+        document.getElementById('font-select').addEventListener('change', (e) => {
+          document.documentElement.style.setProperty('--font-family', e.target.value);
+          saveSettings();
+        });
+
+        // Font Size
+        document.getElementById('font-increase').addEventListener('click', () => {
+          const current = parseInt(document.getElementById('font-size-display').textContent);
+          const newSize = Math.min(current + 2, 32);
+          document.getElementById('font-size-display').textContent = newSize + 'px';
+          document.documentElement.style.setProperty('--font-size', newSize + 'px');
+          saveSettings();
+        });
+
+        document.getElementById('font-decrease').addEventListener('click', () => {
+          const current = parseInt(document.getElementById('font-size-display').textContent);
+          const newSize = Math.max(current - 2, 12);
+          document.getElementById('font-size-display').textContent = newSize + 'px';
+          document.documentElement.style.setProperty('--font-size', newSize + 'px');
+          saveSettings();
+        });
+
+        // Line Height
+        document.getElementById('line-height-slider').addEventListener('input', (e) => {
+          document.getElementById('line-height-display').textContent = parseFloat(e.target.value).toFixed(1);
+          document.documentElement.style.setProperty('--line-height', e.target.value);
+          saveSettings();
+        });
+
+        // Colors
+        document.getElementById('text-color').addEventListener('change', (e) => {
+          document.documentElement.style.setProperty('--text-primary', e.target.value);
+          saveSettings();
+        });
+
+        document.getElementById('bg-color').addEventListener('change', (e) => {
+          document.documentElement.style.setProperty('--bg-primary', e.target.value);
+          saveSettings();
+        });
+
+        // Reset
+        document.getElementById('reset-btn').addEventListener('click', () => {
+          localStorage.clear();
+          location.reload();
+        });
+
+        // Load initial chapter
+        const lastChapter = storage.get('lastChapter') || 'chapter-1';
+        loadChapter(lastChapter);
+
+        // Progress bar
+        window.addEventListener('scroll', updateProgress);
+
+        // Auto-hide header on scroll
+        let lastScrollTop = 0;
+        const header = document.querySelector('header');
+        
+        window.addEventListener('scroll', () => {
+          const scrollTop = window.scrollY;
+          
+          if (scrollTop > lastScrollTop + 50) {
+            // Scrolling DOWN - hide header
+            header.classList.add('hide');
+          } else if (scrollTop < lastScrollTop - 50) {
+            // Scrolling UP - show header
+            header.classList.remove('hide');
+          }
+          
+          // Show header if at top
+          if (scrollTop < 100) {
+            header.classList.remove('hide');
+          }
+          
+          lastScrollTop = scrollTop;
+        });
+      };
+
+      return { init };
+    })();
+
+    document.addEventListener('DOMContentLoaded', App.init);
+  </script>
+</body>
+</html>
