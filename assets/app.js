@@ -1,155 +1,163 @@
 (() => {
 
   /* ── Config ── */
-  const MANIFEST = 'content/manifest.json';
-  const LS_PREFIX = 'basmaihi_';
-  const SAVE_DELAY_MS = 300;
+  const MANIFEST     = 'content/manifest.json';
+  const LS_PREFIX    = 'basmaihi_';
+  const SAVE_DELAY   = 350;
 
   /* ── State ── */
-  let chapters = [];
+  let chapters         = [];
   let currentChapterId = null;
-  let saveTimer = null;
+  let saveTimer        = null;
+  let lastRestoreSignature = '';
 
-  /* ── DOM ── */
+  /* ── DOM helpers ── */
   const $ = id => document.getElementById(id);
-  const coverPage = $('cover-page');
-  const contentEl = $('content');
-  const chaptersList = $('chaptersList');
-  const sidebar = $('sidebar');
-  const settingsPanel = $('settings-panel');
-  const overlay = $('overlay');
-  const progressFill = $('progress-fill');
-  const continueToast = $('continue-toast');
-  const toastChapter = $('toast-chapter');
-  const toastGo = $('toast-go');
-  const toastDismiss = $('toast-dismiss');
-  const toggleNavBtn = $('toggleNav');
+
+  const coverPage       = $('cover-page');
+  const contentEl       = $('content');
+  const chaptersList    = $('chaptersList');
+  const sidebar         = $('sidebar');
+  const settingsPanel   = $('settings-panel');
+  const overlay         = $('overlay');
+  const progressFill    = $('progress-fill');
+  const continueToast   = $('continue-toast');
+  const toastChapter    = $('toast-chapter');
+  const toastGo         = $('toast-go');
+  const toastDismiss    = $('toast-dismiss');
+  const toggleNavBtn    = $('toggleNav');
   const openSettingsBtn = $('openSettings');
-  const continueBtn = $('continueBtn');
-  const fontIncBtn = $('fontInc');
-  const fontDecBtn = $('fontDec');
-  const fontSizeLabel = $('fontSizeLabel');
+  const continueBtn     = $('continueBtn');
+  const fontIncBtn      = $('fontInc');
+  const fontDecBtn      = $('fontDec');
+  const fontSizeLabel   = $('fontSizeLabel');
   const lineHeightInput = $('lineHeight');
-  const fontFamilySel = $('fontFamily');
-  const fontColorInput = $('fontColor');
-  const bgColorInput = $('bgColor');
-  const resetBtn = $('resetSettings');
+  const fontFamilySel   = $('fontFamily');
+  const fontColorInput  = $('fontColor');
+  const bgColorInput    = $('bgColor');
+  const resetBtn        = $('resetSettings');
   const closeSettingsBtn = $('closeSettings');
 
   /* ════════════════════════════════════════
      LocalStorage helpers
   ════════════════════════════════════════ */
   function lsGet(key, fallback = null) {
-    try { const v = localStorage.getItem(LS_PREFIX + key); return v != null ? JSON.parse(v) : fallback; }
-    catch { return fallback; }
+    try {
+      const v = localStorage.getItem(LS_PREFIX + key);
+      return v != null ? JSON.parse(v) : fallback;
+    } catch { return fallback; }
   }
   function lsSet(key, val) {
-    try { localStorage.setItem(LS_PREFIX + key, JSON.stringify(val)); } catch { }
+    try { localStorage.setItem(LS_PREFIX + key, JSON.stringify(val)); } catch {}
   }
   function lsDel(key) {
-    try { localStorage.removeItem(LS_PREFIX + key); } catch { }
+    try { localStorage.removeItem(LS_PREFIX + key); } catch {}
   }
 
   /* ════════════════════════════════════════
      Settings
   ════════════════════════════════════════ */
   const DEFAULT_SETTINGS = {
-    theme: 'light',
+    theme:      'light',
     fontFamily: 'Amiri, serif',
-    fontSize: 18,
+    fontSize:   18,
     lineHeight: 2.0,
-    fontColor: '#1c1007',
-    bgColor: '#f8f4ef',
+    fontColor:  '#1c1007',
+    bgColor:    '#f8f4ef',
   };
 
   function applySettings(s = {}) {
     s = { ...DEFAULT_SETTINGS, ...s };
-    // Theme body classes
+    // Theme
     document.body.className = document.body.className.replace(/theme-\S+/g, '').trim();
-    if (s.theme !== 'light') document.body.classList.add(`theme-${s.theme}`);
-    // Active swatch
-    document.querySelectorAll('.swatch').forEach(sw => {
-      sw.classList.toggle('active', sw.dataset.theme === s.theme);
-    });
-    // CSS variables
+    if (s.theme !== 'light') document.body.classList.add('theme-' + s.theme);
+    document.querySelectorAll('.swatch').forEach(sw =>
+      sw.classList.toggle('active', sw.dataset.theme === s.theme)
+    );
+    // CSS vars
     const root = document.documentElement.style;
     root.setProperty('--font-family', s.fontFamily);
-    root.setProperty('--font-size', s.fontSize + 'px');
+    root.setProperty('--font-size',   s.fontSize + 'px');
     root.setProperty('--line-height', s.lineHeight);
-    if (s.theme === 'sand' || s.theme === 'light') {
-      root.setProperty('--custom-bg', s.bgColor);
-    }
     // UI mirrors
-    if (fontSizeLabel) fontSizeLabel.textContent = s.fontSize + 'px';
-    if (lineHeightInput) lineHeightInput.value = s.lineHeight;
-    if (fontFamilySel) fontFamilySel.value = s.fontFamily;
-    if (fontColorInput) fontColorInput.value = s.fontColor;
-    if (bgColorInput) bgColorInput.value = s.bgColor;
-  }
-
-  function getCurrentSettings() {
-    return {
-      theme: getCurrentTheme(),
-      fontFamily: fontFamilySel ? fontFamilySel.value : DEFAULT_SETTINGS.fontFamily,
-      fontSize: fontSizeLabel ? parseInt(fontSizeLabel.textContent) : DEFAULT_SETTINGS.fontSize,
-      lineHeight: lineHeightInput ? parseFloat(lineHeightInput.value) : DEFAULT_SETTINGS.lineHeight,
-      fontColor: fontColorInput ? fontColorInput.value : DEFAULT_SETTINGS.fontColor,
-      bgColor: bgColorInput ? bgColorInput.value : DEFAULT_SETTINGS.bgColor,
-    };
-  }
-
-  function getCurrentTheme() {
-    const active = document.querySelector('.swatch.active');
-    return active ? active.dataset.theme : 'light';
+    if (fontSizeLabel)   fontSizeLabel.textContent = s.fontSize + 'px';
+    if (lineHeightInput) lineHeightInput.value      = s.lineHeight;
+    if (fontFamilySel)   fontFamilySel.value        = s.fontFamily;
+    if (fontColorInput)  fontColorInput.value       = s.fontColor;
+    if (bgColorInput)    bgColorInput.value         = s.bgColor;
   }
 
   function saveSettings() {
-    lsSet('settings', getCurrentSettings());
-    applySettings(getCurrentSettings());
+    const s = {
+      theme:      (document.querySelector('.swatch.active') || {dataset:{}}).dataset.theme || 'light',
+      fontFamily: fontFamilySel   ? fontFamilySel.value                           : DEFAULT_SETTINGS.fontFamily,
+      fontSize:   fontSizeLabel   ? parseInt(fontSizeLabel.textContent)           : DEFAULT_SETTINGS.fontSize,
+      lineHeight: lineHeightInput ? parseFloat(lineHeightInput.value)             : DEFAULT_SETTINGS.lineHeight,
+      fontColor:  fontColorInput  ? fontColorInput.value                          : DEFAULT_SETTINGS.fontColor,
+      bgColor:    bgColorInput    ? bgColorInput.value                            : DEFAULT_SETTINGS.bgColor,
+    };
+    lsSet('settings', s);
+    applySettings(s);
   }
 
   /* ════════════════════════════════════════
-     Manifest + Chapters
+     Manifest + Chapter List
   ════════════════════════════════════════ */
   async function loadManifest() {
     try {
       const res = await fetch(MANIFEST);
-      const m = await res.json();
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const m  = await res.json();
       chapters = m.chapters || [];
       renderChapterList();
-    } catch {
-      console.warn('Could not load manifest');
+    } catch (e) {
+      console.error('Manifest load failed:', e);
     }
   }
 
   function renderChapterList() {
     if (!chaptersList) return;
     chaptersList.innerHTML = '';
+
+    // Group by part if present
+    const groups = {};
+    chapters.forEach(ch => {
+      const part = ch.part || 'default';
+      if (!groups[part]) groups[part] = { label: ch.partLabel || '', items: [] };
+      groups[part].items.push(ch);
+    });
+
     chapters.forEach((ch, i) => {
-      const li = document.createElement('li');
-      const a = document.createElement('a');
-      const num = document.createElement('span');
-      const txt = document.createElement('span');
-      const prog = document.createElement('div');
+      const li       = document.createElement('li');
+      const a        = document.createElement('a');
+      const num      = document.createElement('span');
+      const title    = document.createElement('span');
+      const progWrap = document.createElement('div');
       const progFill = document.createElement('div');
 
-      num.className = 'ch-num';
-      num.textContent = i + 1;
-      txt.style.flex = '1';
-      txt.textContent = ch.title;
-      prog.className = 'ch-progress';
+      num.className    = 'ch-num';
+      num.textContent  = i + 1;
+      title.style.flex = '1';
+      title.textContent = ch.title;
+
+      progWrap.className = 'ch-progress';
       progFill.className = 'ch-progress-fill';
       const savedPct = lsGet('pct_' + ch.id, 0);
       progFill.style.width = savedPct + '%';
-      prog.appendChild(progFill);
+      progWrap.appendChild(progFill);
 
-      a.appendChild(num);
-      a.appendChild(txt);
-      a.href = '#' + ch.id;
+      a.href  = '#' + ch.id;
       a.title = ch.title;
-      a.addEventListener('click', e => { e.preventDefault(); loadChapter(ch.id); closeSidebar(); });
+      a.appendChild(num);
+      a.appendChild(title);
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        loadChapter(ch.id);
+        closeSidebar();
+      });
+
       li.appendChild(a);
-      li.appendChild(prog);
+      li.appendChild(progWrap);
       chaptersList.appendChild(li);
     });
   }
@@ -157,29 +165,115 @@
   function setActiveChapter(id) {
     document.querySelectorAll('#chaptersList li a').forEach((a, i) => {
       const ch = chapters[i];
-      a.classList.toggle('active', ch && ch.id === id);
+      a.classList.toggle('active', !!(ch && ch.id === id));
     });
+  }
+
+  /* ════════════════════════════════════════
+     Word HTML Cleaner
+     Pure regex pre-pass + safe two-pass DOM walk
+  ════════════════════════════════════════ */
+  function cleanWordHtml(raw) {
+    // ── Phase 1: Regex pre-clean (before DOMParser)
+    let html = raw
+      // Remove XML declaration
+      .replace(/<\?xml[\s\S]*?\?>/gi, '')
+      // Remove Word conditional comments and their bodies
+      .replace(/<!--\[if [\s\S]*?<!\[endif\]-->/gi, '')
+      .replace(/<!--\[if [^\]]*\]>/gi, '')
+      .replace(/<!\[endif\]-->/gi, '')
+      // Remove Word processing instructions
+      .replace(/<\?if[\s\S]*?\?>/gi, '')
+      .replace(/<\?endif>/gi, '')
+      // Remove Office namespace tags: <o:p>, <w:anything>, <v:anything>, <m:anything>
+      .replace(/<\/?o:[^>]*>/gi, '')
+      .replace(/<\/?w:[^>]*>/gi, '')
+      .replace(/<\/?v:[^>]*>/gi, '')
+      .replace(/<\/?m:[^>]*>/gi, '')
+      // Remove <style> blocks completely
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      // Remove <script> blocks completely
+      .replace(/<script[\s\S]*?<\/script>/gi, '');
+
+    // ── Phase 2: DOM parse and clean
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(html, 'text/html');
+    const body   = doc.body;
+
+    // Remove remaining junk elements
+    body.querySelectorAll('style, script, link, meta, xml').forEach(el => el.remove());
+
+    // ── Phase 3: Walk all elements and strip attributes
+    // Collect into a static array first to avoid live-collection bugs
+    const allEls = Array.from(body.querySelectorAll('*'));
+    const QURAN_COLOR = /color\s*:\s*(#C00000|#c00000|red)/i;
+
+    allEls.forEach(el => {
+      const tag          = el.tagName.toLowerCase();
+      const style        = el.getAttribute('style') || '';
+      const isQuranColor = QURAN_COLOR.test(style);
+
+      // Strip every attribute
+      const attrsToRemove = [];
+      for (const attr of el.attributes) {
+        attrsToRemove.push(attr.name);
+      }
+      attrsToRemove.forEach(attr => el.removeAttribute(attr));
+
+      // Restore dir=rtl on elements that need it (sections)
+      if (tag === 'section') el.setAttribute('dir', 'rtl');
+
+      // Re-add quran class
+      if (isQuranColor && ['span', 'b', 'strong', 'i'].includes(tag)) {
+        el.className = 'quran-text';
+      }
+    });
+
+    // ── Phase 4: Unwrap passthrough spans (static array, post-attribute-strip)
+    // Must re-query after attribute stripping since classes changed
+    const spans = Array.from(body.querySelectorAll('span:not(.quran-text)'));
+    spans.forEach(span => {
+      if (!span.parentNode) return; // already removed
+      const text = span.textContent.trim();
+      if (!text) {
+        span.remove();
+        return;
+      }
+      // Unwrap: move children before the span, then remove span
+      const parent = span.parentNode;
+      while (span.firstChild) {
+        parent.insertBefore(span.firstChild, span);
+      }
+      span.remove();
+    });
+
+    // ── Phase 5: Remove empty blocks
+    Array.from(body.querySelectorAll('p, li')).forEach(el => {
+      const t = el.textContent.trim();
+      if (!t || t === '\u00a0' || t === '\u200b') el.remove();
+    });
+
+    // ── Phase 6: Remove images (Word clipboard artifacts)
+    body.querySelectorAll('img').forEach(img => img.remove());
+
+    return body.innerHTML;
   }
 
   /* ════════════════════════════════════════
      Paragraph-level Autosave
   ════════════════════════════════════════ */
-
-  // Flatten all meaningful block-level elements inside #content
   function getReadingBlocks() {
     return Array.from(
-      contentEl.querySelectorAll('p, h1, h2, h3, h4, h5, li, td, blockquote')
-    ).filter(el => el.textContent.trim().length > 4);
+      contentEl.querySelectorAll('p, h1, h2, h3, h4, h5, li, blockquote, td')
+    ).filter(el => el.textContent.trim().length > 3);
   }
 
-  // Assign stable data-block-index attributes
   function indexBlocks() {
     getReadingBlocks().forEach((el, i) => el.setAttribute('data-block', i));
   }
 
-  // Find the block most visible in the viewport (top half priority)
   function findCurrentBlock() {
-    const blocks = getReadingBlocks();
+    const blocks  = getReadingBlocks();
     if (!blocks.length) return -1;
     const viewMid = window.innerHeight * 0.35;
     let best = null, bestDist = Infinity;
@@ -190,61 +284,99 @@
       if (dist < bestDist) { bestDist = dist; best = el; }
     }
     if (!best) {
-      // fallback: first visible
       for (const el of blocks) {
         const r = el.getBoundingClientRect();
-        if (r.top >= 0 && r.top < window.innerHeight) return parseInt(el.getAttribute('data-block') || '0');
+        if (r.top >= 0 && r.top < window.innerHeight) {
+          return parseInt(el.getAttribute('data-block') || '0');
+        }
       }
     }
     return best ? parseInt(best.getAttribute('data-block') || '0') : -1;
   }
 
-  // Scroll to block index and pulse-highlight it
+  function getSavedProgress(chapterId) {
+    return lsGet('progress_' + chapterId, null);
+  }
+
   function scrollToBlock(blockIdx) {
     const blocks = getReadingBlocks();
-    const el = blocks[blockIdx] || blocks[0];
+    const el     = blocks[blockIdx] || blocks[0];
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY - 100;
     window.scrollTo({ top, behavior: 'smooth' });
     setTimeout(() => {
       el.classList.add('position-highlight');
       el.addEventListener('animationend', () => el.classList.remove('position-highlight'), { once: true });
-    }, 500);
+    }, 450);
   }
 
-  // Save current reading position
   function savePosition() {
     if (!currentChapterId) return;
-    const blockIdx = findCurrentBlock();
-    if (blockIdx < 0) return;
+    const blockIdx    = findCurrentBlock();
+    const y = window.scrollY || window.pageYOffset || 0;
+    if (blockIdx < 0 && !y) return;
     const totalBlocks = getReadingBlocks().length;
-    const pct = totalBlocks > 0 ? Math.round((blockIdx / totalBlocks) * 100) : 0;
+    const pct         = totalBlocks > 0 ? Math.round((blockIdx / totalBlocks) * 100) : 0;
     lsSet('pos_' + currentChapterId, blockIdx);
+    lsSet('progress_' + currentChapterId, {
+      block: blockIdx,
+      y,
+      ts: Date.now()
+    });
     lsSet('pct_' + currentChapterId, pct);
-    updateReadingProgressUI(pct);
-    // Update chapter list mini-progress
-    const chapterIndex = chapters.findIndex(c => c.id === currentChapterId);
-    if (chapterIndex >= 0) {
-      const fill = chaptersList.querySelectorAll('.ch-progress-fill')[chapterIndex];
+    if (progressFill) progressFill.style.width = pct + '%';
+    // Update sidebar mini-progress bar
+    const chIdx = chapters.findIndex(c => c.id === currentChapterId);
+    if (chIdx >= 0 && chaptersList) {
+      const fill = chaptersList.querySelectorAll('.ch-progress-fill')[chIdx];
       if (fill) fill.style.width = pct + '%';
+    }
+  }
+
+  function restorePosition(chapterId, force = false) {
+    if (!chapterId) return;
+    const saved = getSavedProgress(chapterId);
+    const signature = saved ? `${saved.block ?? ''}:${saved.y ?? 0}` : `legacy:${lsGet('pos_' + chapterId, -1)}`;
+    if (!force && signature === lastRestoreSignature) return;
+
+    const legacyBlock = lsGet('pos_' + chapterId, -1);
+    const block = saved && typeof saved.block === 'number' ? saved.block : legacyBlock;
+    const y = saved && typeof saved.y === 'number' ? saved.y : 0;
+
+    if (block >= 0) {
+      lastRestoreSignature = signature;
+      scrollToBlock(block);
+      return;
+    }
+
+    if (y > 0) {
+      lastRestoreSignature = signature;
+      window.scrollTo({ top: y, behavior: 'auto' });
+    }
+  }
+
+  function restorePositionRepeatedly(chapterId) {
+    const delays = [0, 100, 300, 700, 1200, 2000, 3500];
+    delays.forEach(delay => {
+      window.setTimeout(() => restorePosition(chapterId, delay === 0), delay);
+    });
+    if (window.requestAnimationFrame) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => restorePosition(chapterId, true));
+      });
     }
   }
 
   function onScroll() {
     if (!currentChapterId) return;
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(savePosition, SAVE_DELAY_MS);
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(savePosition, SAVE_DELAY);
     updateProgressBar();
   }
 
   function updateProgressBar() {
-    const scrollTop = window.scrollY;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const pct = docHeight > 0 ? Math.min(100, Math.round((scrollTop / docHeight) * 100)) : 0;
-    if (progressFill) progressFill.style.width = pct + '%';
-  }
-
-  function updateReadingProgressUI(pct) {
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    const pct  = docH > 0 ? Math.min(100, Math.round((window.scrollY / docH) * 100)) : 0;
     if (progressFill) progressFill.style.width = pct + '%';
   }
 
@@ -253,9 +385,12 @@
   ════════════════════════════════════════ */
   async function loadChapter(id) {
     const ch = chapters.find(c => c.id === id);
-    if (!ch) return;
+    if (!ch) {
+      console.warn('Chapter not found:', id, '  Available:', chapters.map(c => c.id));
+      return;
+    }
 
-    // Save position in current chapter before switching
+    // Save position in leaving chapter
     if (currentChapterId && currentChapterId !== id) savePosition();
 
     currentChapterId = id;
@@ -263,7 +398,7 @@
     document.title = ch.title + ' — بأسمائه نحيا';
     history.replaceState(null, '', '#' + id);
 
-    // Show loading
+    // Show spinner
     hideCover();
     contentEl.classList.remove('visible');
     contentEl.innerHTML = `
@@ -272,106 +407,38 @@
         <span>جارٍ تحميل الفصل…</span>
       </div>`;
     contentEl.classList.add('visible');
-    window.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0, behavior: 'instant' });
 
     try {
-      const res = await fetch('content/' + ch.file);
-      const html = await res.text();
-      contentEl.innerHTML = cleanWordHtml(html);
+      const res  = await fetch('content/' + ch.file);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const raw  = await res.text();
+      const html = cleanWordHtml(raw);
+      contentEl.innerHTML = html;
       contentEl.setAttribute('dir', 'rtl');
       indexBlocks();
       setActiveChapter(id);
 
-      // Restore scroll position
-      const savedBlock = lsGet('pos_' + id, -1);
-      if (savedBlock >= 0) {
-        requestAnimationFrame(() => scrollToBlock(savedBlock));
-      }
-    } catch {
-      contentEl.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:40px">تعذّر تحميل الفصل.</p>';
+      // Update continue button in header
+      if (continueBtn) continueBtn.style.display = 'none';
+
+      restorePositionRepeatedly(id);
+    } catch (e) {
+      console.error('Chapter load error:', e);
+      contentEl.innerHTML = `
+        <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+          <p style="font-size:1.2em">تعذّر تحميل الفصل</p>
+          <p style="font-size:0.85em;opacity:0.6">${e.message}</p>
+        </div>`;
     }
-  }
-
-  /* ════════════════════════════════════════
-     Word HTML Cleaner
-     Strips MSO inline styles while preserving Arabic text + bold
-  ════════════════════════════════════════ */
-  function cleanWordHtml(html) {
-    // Pre-sanitize: remove Word XML conditional comments and processing instructions
-    // that would break DOMParser (e.g. <?if !supportLists?>, <!--[if gte mso 9]>)
-    let cleaned = html
-      .replace(/<\?xml[^>]*>/gi, '')
-      .replace(/<\?if[^>]*>/gi, '')
-      .replace(/<\?endif>/gi, '')
-      .replace(/<!--\[if[^\]]*\]>[\s\S]*?<!\[endif\]-->/gi, '')
-      .replace(/<!--\[if[^\]]*\]>/gi, '')
-      .replace(/<!\[endif\]-->/gi, '')
-      .replace(/<o:p[^>]*>[\s\S]*?<\/o:p>/gi, '')
-      .replace(/<\/o:p>/gi, '')
-      .replace(/<o:p>/gi, '');
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(cleaned, 'text/html');
-    const body = doc.body;
-
-    // Remove remaining Word/Office namespace elements
-    body.querySelectorAll('[class^="Mso"], style, script, link').forEach(el => el.remove());
-
-    // Strip inline styles from all elements, preserve semantic meaning
-    body.querySelectorAll('*').forEach(el => {
-      const tag = el.tagName.toLowerCase();
-      const inlineStyle = el.getAttribute('style') || '';
-      const isQuranColor = /color\s*:\s*#?C00000|color\s*:\s*red/i.test(inlineStyle);
-
-      // Remove all non-semantic attributes
-      el.removeAttribute('style');
-      el.removeAttribute('class');
-      el.removeAttribute('lang');
-      el.removeAttribute('dir');
-      el.removeAttribute('align');
-      el.removeAttribute('valign');
-      el.removeAttribute('xmlns');
-
-      // Mark Quran-verse colored text
-      if (isQuranColor && ['span', 'b', 'strong'].includes(tag)) {
-        el.setAttribute('class', 'quran-text');
-      }
-    });
-
-    // Unwrap empty/passthrough spans (do in a second pass to avoid live-collection issues)
-    const spans = Array.from(body.querySelectorAll('span:not(.quran-text)'));
-    spans.forEach(el => {
-      if (!el.textContent.trim() && !el.children.length) {
-        el.remove();
-      } else if (el.parentNode) {
-        // Unwrap the span, moving its children up
-        const parent = el.parentNode;
-        while (el.firstChild) parent.insertBefore(el.firstChild, el);
-        el.remove();
-      }
-    });
-
-    // Remove empty paragraphs
-    body.querySelectorAll('p').forEach(p => {
-      const text = p.textContent.trim();
-      if (!text || text === '\u200b' || text === '\u00a0') p.remove();
-    });
-
-    // Remove images from Word clipboard
-    body.querySelectorAll('img').forEach(img => img.remove());
-
-    // Ensure all sections are RTL
-    body.querySelectorAll('section').forEach(s => s.setAttribute('dir', 'rtl'));
-
-    return body.innerHTML;
   }
 
   /* ════════════════════════════════════════
      Cover Page
   ════════════════════════════════════════ */
   function showCover() {
-    if (coverPage) { coverPage.style.display = 'block'; }
-    if (contentEl) { contentEl.classList.remove('visible'); }
+    if (coverPage)  coverPage.style.display  = '';
+    if (contentEl)  contentEl.classList.remove('visible');
     currentChapterId = null;
     history.replaceState(null, '', location.pathname);
     document.title = 'بأسمائه نحيا — قارئ الكتاب';
@@ -384,7 +451,7 @@
   /* ════════════════════════════════════════
      Continue Reading Toast
   ════════════════════════════════════════ */
-  let toastTimeout = null;
+  let toastTimer = null;
   function showContinueToast() {
     const lastId = lsGet('last_chapter');
     if (!lastId) return;
@@ -393,72 +460,77 @@
     if (toastChapter) toastChapter.textContent = ch.title;
     if (continueToast) {
       continueToast.classList.add('show');
-      if (toastTimeout) clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => continueToast.classList.remove('show'), 8000);
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => continueToast.classList.remove('show'), 8000);
     }
   }
 
   function hideContinueToast() {
     if (continueToast) continueToast.classList.remove('show');
+    clearTimeout(toastTimer);
   }
 
   /* ════════════════════════════════════════
      Sidebar
   ════════════════════════════════════════ */
   function toggleSidebar() {
+    if (!sidebar) return;
     const isMobile = window.innerWidth <= 900;
     if (isMobile) {
       sidebar.classList.toggle('open');
-      overlay.classList.toggle('active', sidebar.classList.contains('open'));
+      if (overlay) overlay.classList.toggle('active', sidebar.classList.contains('open'));
     } else {
       sidebar.classList.toggle('collapsed');
     }
   }
 
   function closeSidebar() {
+    if (!sidebar) return;
     sidebar.classList.remove('open');
-    overlay.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
   }
 
   /* ════════════════════════════════════════
      Settings Panel
   ════════════════════════════════════════ */
   function openSettings() {
-    settingsPanel.classList.add('open');
-    overlay.classList.add('active');
+    if (settingsPanel) settingsPanel.classList.add('open');
+    if (overlay) overlay.classList.add('active');
   }
 
   function closeSettings() {
-    settingsPanel.classList.remove('open');
-    overlay.classList.remove('active');
+    if (settingsPanel) settingsPanel.classList.remove('open');
+    // Only remove overlay if sidebar is also closed
+    if (overlay && !sidebar?.classList.contains('open')) {
+      overlay.classList.remove('active');
+    }
   }
 
   /* ════════════════════════════════════════
      Bootstrap
   ════════════════════════════════════════ */
   async function init() {
-    // Restore settings first (before anything shows)
-    const savedSettings = lsGet('settings');
-    applySettings(savedSettings || DEFAULT_SETTINGS);
+    // Apply saved settings immediately
+    applySettings(lsGet('settings') || DEFAULT_SETTINGS);
 
+    // Load chapters list
     await loadManifest();
 
-    // Check for hash in URL
-    const hash = (location.hash || '').replace('#', '');
-    if (hash) {
+    // Determine what to show
+    const hash   = (location.hash || '').replace('#', '');
+    const lastId = lsGet('last_chapter');
+
+    if (hash && chapters.find(c => c.id === hash)) {
+      // Deep link — go straight to chapter
       await loadChapter(hash);
     } else {
-      // Check if there's a saved position
-      const lastId = lsGet('last_chapter');
+      // Show cover
+      showCover();
+
+      // Show continue button + toast if there's reading history
       if (lastId && chapters.find(c => c.id === lastId)) {
-        showCover();
-        setTimeout(showContinueToast, 600);
-      } else {
-        showCover();
-        // Auto-load first chapter if no history
-        if (chapters.length > 0) {
-          setTimeout(() => showContinueToast(), 800);
-        }
+        if (continueBtn) continueBtn.style.display = '';
+        setTimeout(showContinueToast, 700);
       }
     }
   }
@@ -467,41 +539,52 @@
      Event Listeners
   ════════════════════════════════════════ */
 
-  // Nav
+  // Sidebar toggle
   if (toggleNavBtn) toggleNavBtn.addEventListener('click', toggleSidebar);
-  if (overlay) overlay.addEventListener('click', () => { closeSettings(); closeSidebar(); });
 
-  // Continue reading
+  // Overlay click — close panels
+  if (overlay) overlay.addEventListener('click', () => {
+    closeSettings();
+    closeSidebar();
+  });
+
+  // Header "Continue" button
   if (continueBtn) continueBtn.addEventListener('click', () => {
     const lastId = lsGet('last_chapter');
     if (lastId) loadChapter(lastId);
     hideContinueToast();
   });
-  if (toastGo) toastGo.addEventListener('click', () => {
-    const lastId = lsGet('last_chapter');
-    if (lastId) loadChapter(lastId);
-    hideContinueToast();
-  });
+
+  // Toast buttons
+  if (toastGo)     toastGo.addEventListener('click',     () => { const id = lsGet('last_chapter'); if (id) loadChapter(id); hideContinueToast(); });
   if (toastDismiss) toastDismiss.addEventListener('click', hideContinueToast);
 
-  // Cover buttons
+  // Cover page buttons
   const startReadingBtn = $('startReadingBtn');
   if (startReadingBtn) startReadingBtn.addEventListener('click', () => {
     const lastId = lsGet('last_chapter');
-    if (lastId) loadChapter(lastId);
+    if (lastId && chapters.find(c => c.id === lastId)) loadChapter(lastId);
     else if (chapters.length) loadChapter(chapters[0].id);
   });
 
   const fromBeginBtn = $('fromBeginBtn');
   if (fromBeginBtn) fromBeginBtn.addEventListener('click', () => {
     if (chapters.length) {
-      lsDel('pos_' + (chapters[0]?.id));
+      // Clear position for first chapter so we start fresh
+      lsDel('pos_' + chapters[0].id);
       loadChapter(chapters[0].id);
     }
   });
 
-  // Settings panel open/close
-  if (openSettingsBtn) openSettingsBtn.addEventListener('click', openSettings);
+  // Back to cover (sidebar button)
+  const backToCoverBtn = $('backToCover');
+  if (backToCoverBtn) backToCoverBtn.addEventListener('click', () => {
+    showCover();
+    closeSidebar();
+  });
+
+  // Settings panel
+  if (openSettingsBtn)  openSettingsBtn.addEventListener('click',  openSettings);
   if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', closeSettings);
 
   // Theme swatches
@@ -513,30 +596,30 @@
     });
   });
 
-  // Font size
+  // Font size +/-
   if (fontIncBtn) fontIncBtn.addEventListener('click', () => {
-    let s = parseInt(fontSizeLabel.textContent) || 18;
-    s = Math.min(32, s + 1);
-    fontSizeLabel.textContent = s + 'px';
-    document.documentElement.style.setProperty('--font-size', s + 'px');
+    const current = parseInt(fontSizeLabel?.textContent) || 18;
+    const next    = Math.min(32, current + 1);
+    if (fontSizeLabel) fontSizeLabel.textContent = next + 'px';
+    document.documentElement.style.setProperty('--font-size', next + 'px');
     saveSettings();
   });
   if (fontDecBtn) fontDecBtn.addEventListener('click', () => {
-    let s = parseInt(fontSizeLabel.textContent) || 18;
-    s = Math.max(13, s - 1);
-    fontSizeLabel.textContent = s + 'px';
-    document.documentElement.style.setProperty('--font-size', s + 'px');
+    const current = parseInt(fontSizeLabel?.textContent) || 18;
+    const next    = Math.max(13, current - 1);
+    if (fontSizeLabel) fontSizeLabel.textContent = next + 'px';
+    document.documentElement.style.setProperty('--font-size', next + 'px');
     saveSettings();
   });
 
-  // Other settings
+  // Other setting inputs
   if (lineHeightInput) lineHeightInput.addEventListener('input', () => {
     document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
     saveSettings();
   });
-  if (fontFamilySel) fontFamilySel.addEventListener('change', saveSettings);
-  if (fontColorInput) fontColorInput.addEventListener('input', saveSettings);
-  if (bgColorInput) bgColorInput.addEventListener('input', saveSettings);
+  if (fontFamilySel)  fontFamilySel.addEventListener('change', saveSettings);
+  if (fontColorInput) fontColorInput.addEventListener('input',  saveSettings);
+  if (bgColorInput)   bgColorInput.addEventListener('input',   saveSettings);
   if (resetBtn) resetBtn.addEventListener('click', () => {
     lsDel('settings');
     applySettings(DEFAULT_SETTINGS);
@@ -544,23 +627,27 @@
 
   // Scroll tracking
   window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('beforeunload', savePosition);
+  window.addEventListener('pagehide', savePosition);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') savePosition();
+  });
 
-  // Hash change
+  // Hash change (browser back/forward)
   window.addEventListener('hashchange', () => {
     const id = (location.hash || '').replace('#', '');
-    if (id) loadChapter(id);
+    if (id && chapters.find(c => c.id === id)) loadChapter(id);
   });
 
   // Keyboard shortcuts
   document.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
     if (e.key === 'Escape') { closeSettings(); closeSidebar(); }
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      const dir = e.key === 'ArrowLeft' ? 1 : -1; // RTL: left = next
-      if (!currentChapterId) return;
-      const idx = chapters.findIndex(c => c.id === currentChapterId);
-      const nextIdx = idx + dir;
-      if (nextIdx >= 0 && nextIdx < chapters.length) loadChapter(chapters[nextIdx].id);
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && currentChapterId) {
+      const dir  = e.key === 'ArrowLeft' ? 1 : -1; // RTL: left = next
+      const idx  = chapters.findIndex(c => c.id === currentChapterId);
+      const next = idx + dir;
+      if (next >= 0 && next < chapters.length) loadChapter(chapters[next].id);
     }
   });
 

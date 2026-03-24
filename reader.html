@@ -400,12 +400,75 @@
 
     let currentChapter = 'chapter-1';
     let scrollTimeout;
+    let lastRestoreSignature = '';
+
+    const getBlocks = () =>
+      Array.from(document.querySelectorAll('#content p, #content h1, #content h2, #content h3, #content li, #content blockquote, #content td'))
+        .filter(el => el.textContent.trim().length > 3);
+
+    const indexBlocks = () => {
+      getBlocks().forEach((el, i) => el.setAttribute('data-reading-block', i));
+    };
+
+    const findCurrentBlock = () => {
+      const blocks = getBlocks();
+      if (!blocks.length) return -1;
+      const viewMid = window.innerHeight * 0.35;
+      let best = null, bestDist = Infinity;
+      blocks.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+        const dist = Math.abs(rect.top - viewMid);
+        if (dist < bestDist) {
+          best = el;
+          bestDist = dist;
+        }
+      });
+      return best ? parseInt(best.getAttribute('data-reading-block') || '0', 10) : 0;
+    };
+
+    const saveReadingPosition = () => {
+      const block = findCurrentBlock();
+      const payload = { block, y: window.scrollY || 0, ts: Date.now() };
+      storage.set('pos_' + currentChapter, payload);
+      const ind = document.getElementById('autosave-indicator');
+      if (ind) {
+        ind.classList.add('active');
+        setTimeout(() => ind.classList.remove('active'), 1500);
+      }
+    };
+
+    const restoreReadingPosition = (id, force = false) => {
+      const saved = storage.get('pos_' + id);
+      if (!saved) return;
+      const signature = `${saved.block ?? ''}:${saved.y ?? 0}`;
+      if (!force && signature === lastRestoreSignature) return;
+      lastRestoreSignature = signature;
+
+      const blocks = getBlocks();
+      const target = typeof saved.block === 'number' ? blocks[saved.block] : null;
+      if (target) {
+        const top = target.getBoundingClientRect().top + window.scrollY - 100;
+        window.scrollTo(0, Math.max(0, top));
+        return;
+      }
+      if (typeof saved.y === 'number') {
+        window.scrollTo(0, Math.max(0, saved.y));
+      }
+    };
+
+    const restoreReadingPositionRepeatedly = (id) => {
+      [0, 100, 300, 700, 1200, 2000, 3500].forEach(delay => {
+        setTimeout(() => restoreReadingPosition(id, delay === 0), delay);
+      });
+      requestAnimationFrame(() => requestAnimationFrame(() => restoreReadingPosition(id, true)));
+    };
 
     const loadChapter = (id) => {
       currentChapter = id;
       document.getElementById('content').innerHTML = content[id] || 'خطأ في التحميل';
-      const pos = storage.get('pos_' + id) || 0;
-      setTimeout(() => window.scrollTo(0, pos), 100);
+      indexBlocks();
+      restoreReadingPositionRepeatedly(id);
       document.querySelectorAll('#chapters-list a').forEach(a => a.classList.toggle('active', a.dataset.chapter === id));
       document.getElementById('sidebar').classList.remove('active');
       storage.set('lastChapter', id);
@@ -451,9 +514,7 @@
       document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('settings').classList.toggle('active'));
       document.getElementById('continue-btn').addEventListener('click', () => {
         const last = storage.get('lastChapter') || 'chapter-1';
-        const pos = storage.get('pos_' + last) || 0;
         loadChapter(last);
-        setTimeout(() => window.scrollTo(0, pos), 200);
       });
 
       document.querySelectorAll('.swatch').forEach(s => {
@@ -523,11 +584,14 @@
 
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
-          storage.set('pos_' + currentChapter, st);
-          const ind = document.getElementById('autosave-indicator');
-          ind.classList.add('active');
-          setTimeout(() => ind.classList.remove('active'), 1500);
+          saveReadingPosition();
         }, 2000);
+      });
+
+      window.addEventListener('beforeunload', saveReadingPosition);
+      window.addEventListener('pagehide', saveReadingPosition);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') saveReadingPosition();
       });
 
       let lastScrollTop = 0;
